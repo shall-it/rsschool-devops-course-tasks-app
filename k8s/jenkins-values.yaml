@@ -408,6 +408,8 @@ controller:
     - workflow-aggregator:600.vb_57cdd26fdd7
     - git:5.5.2
     - configuration-as-code:1873.vea_5814ca_9c93
+    - people-view:1.2
+    - job-dsl:1.77
 
   # If set to false, Jenkins will download the minimum required version of all dependencies.
   # -- Download the minimum required version or latest version of all dependencies
@@ -519,142 +521,52 @@ controller:
     configScripts:
       jcasc-config: |
         jenkins:
-          systemMessage: Welcome to Jenkins CI/CD server. This Jenkins is configured and managed 'as code'
-    #       agentProtocols:
-    #       - "JNLP4-connect"
-    #       - "Ping"
-    #       authorizationStrategy:
-    #         loggedInUsersCanDoAnything:
-    #           allowAnonymousRead: false
-    #       clouds:
-    #       - kubernetes:
-    #           containerCap: 10
-    #           containerCapStr: "10"
-    #           jenkinsUrl: "http://jenkins.cloudinsideout.com.:8080"
-    #           name: "kubernetes"
-    #           namespace: "jenkins"
-    #           podLabels:
-    #           - key: "jenkins/jenkins-jenkins-agent"
-    #             value: "true"
-    #           templates:
-    #       crumbIssuer:
-    #         standard:
-    #           excludeClientIPFromCrumb: true
-    #       disableRememberMe: false
-    #       disabledAdministrativeMonitors:
-    #       - "jenkins.diagnostics.RootUrlNotSetMonitor"
-    #       # labelAtoms:
-    #       # - name: "built-in"
-    #       # - name: "default-00k73"
-    #       # - name: "jenkins-jenkins-agent"
-    #       markupFormatter: "plainText"
-    #       mode: NORMAL
-    #       myViewsTabBar: "standard"
-    #       nodeMonitors:
-    #       - "architecture"
-    #       - "clock"
-    #       - diskSpace:
-    #           freeSpaceThreshold: "1GiB"
-    #           freeSpaceWarningThreshold: "2GiB"
-    #       - "swapSpace"
-    #       - tmpSpace:
-    #           freeSpaceThreshold: "1GiB"
-    #           freeSpaceWarningThreshold: "2GiB"
-    #       - "responseTime"
-    #       numExecutors: 0
-    #       primaryView:
-    #         all:
-    #           name: "all"
-    #       projectNamingStrategy: "standard"
-    #       quietPeriod: 5
-    #       remotingSecurity:
-    #         enabled: true
-    #       scmCheckoutRetryCount: 0
-    #       securityRealm:
-    #         local:
-    #           allowsSignup: false
-    #           enableCaptcha: false
-    #           users:
-    #           - id: "admin"
-    #             name: "Jenkins Admin"
-    #             properties:
-    #             - "apiToken"
-    #             - "consoleUrlProvider"
-    #             - "mailer"
-    #             - "myView"
-    #             - preferredProvider:
-    #                 providerId: "default"
-    #             - "timezone"
-    #             - "experimentalFlags"
-    #       slaveAgentPort: 50000
-    #       updateCenter:
-    #         sites:
-    #         - id: "default"
-    #           url: "https://updates.jenkins.io/update-center.json"
-    #       views:
-    #       - all:
-    #           name: "all"
-    #       viewsTabBar: "standard"
-    #     globalCredentialsConfiguration:
-    #       configuration:
-    #         providerFilter: "none"
-    #         typeFilter: "none"
-    #     appearance:
-    #       prism:
-    #         theme: PRISM
-    #     security:
-    #       apiToken:
-    #         creationOfLegacyTokenEnabled: false
-    #         tokenGenerationOnCreationEnabled: false
-    #         usageStatisticsEnabled: true
-    #       cps:
-    #         hideSandbox: false
-    #       gitHooks:
-    #         allowedOnAgents: false
-    #         allowedOnController: false
-    #       gitHostKeyVerificationConfiguration:
-    #         sshHostKeyVerificationStrategy: "knownHostsFileVerificationStrategy"
-    #       scriptApproval:
-    #         forceSandbox: false
-    #     unclassified:
-    #       buildDiscarders:
-    #         configuredBuildDiscarders:
-    #         - "jobBuildDiscarder"
-    #       fingerprints:
-    #         fingerprintCleanupDisabled: false
-    #         storage: "file"
-    #       location:
-    #         adminAddress: "Wasn't setup yet <nobody@nowhere>"
-    #       mailer:
-    #         charset: "UTF-8"
-    #         useSsl: false
-    #         useTls: false
-    #       pollSCM:
-    #         pollingThreadCount: 10
-    #       scmGit:
-    #         addGitTagAction: false
-    #         allowSecondFetch: false
-    #         createAccountBasedOnEmail: false
-    #         disableGitToolChooser: false
-    #         hideCredentials: false
-    #         showEntireCommitSummaryInChanges: false
-    #         useExistingAccountWithSameEmail: false
-    #     tool:
-    #       git:
-    #         installations:
-    #         - home: "git"
-    #           name: "Default"
-    #       mavenGlobalConfig:
-    #         globalSettingsProvider: "standard"
-    #         settingsProvider: "standard"
+          systemMessage: Welcome to Jenkins CI/CD instance configured and managed via JCasC
+          securityRealm:
+            local:
+              users:
+              - id: "user"
+                name: "Jenkins regular user"
+                properties:
+                  - "apiToken"
+                  - "consoleUrlProvider"
+                  - "myView"
+                  - preferredProvider:
+                      providerId: "default"
+                  - "timezone"
+                  - "experimentalFlags"
+        security:
+          scriptApproval:
+            forceSandbox: true
+        jobs:
+        - script: >
+            pipelineJob('HelloWorld') {
+              definition {
+                cps {
+                  script("""
+                  pipeline {
+                    agent { label 'built-in' }
+                    stages {
+                      stage('Hello') {
+                        steps {
+                          echo 'Hello, World!'
+                        }
+                      }
+                    }
+                  }
+                  """.stripIndent())
+                  sandbox()
+                }
+              }
+            }
 
     # Allows adding to the top-level security JCasC section. For legacy purposes, by default, the chart includes apiToken configurations
     # -- Jenkins Config as Code security-section
-    security:
-      apiToken:
-        creationOfLegacyTokenEnabled: false
-        tokenGenerationOnCreationEnabled: false
-        usageStatisticsEnabled: true
+    # security:
+    #   apiToken:
+    #     creationOfLegacyTokenEnabled: false
+    #     tokenGenerationOnCreationEnabled: false
+    #     usageStatisticsEnabled: true
 
     # Ignored if securityRealm is defined in controller.JCasC.configScripts
     # -- Jenkins Config as Code Security Realm-section
@@ -1111,7 +1023,7 @@ agent:
   # -- Configure container group
   runAsGroup:
   # -- Enables the agent to use the host network
-  hostNetworking: true
+  hostNetworking: false
   # -- Resources allocation (Requests and Limits)
   resources:
     requests:
