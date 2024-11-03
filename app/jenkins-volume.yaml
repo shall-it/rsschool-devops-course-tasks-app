@@ -3,7 +3,6 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: jenkins-sc
-# provisioner: kubernetes.io/no-provisioner
 provisioner: kubernetes.io/aws-ebs
 volumeBindingMode: Immediate
 ---
@@ -21,16 +20,3 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   hostPath:
     path: /data/jenkins-volume/
-# ---
-# apiVersion: v1
-# kind: PersistentVolumeClaim
-# metadata:
-#   name: jenkins-pv-claim
-#   namespace: jenkins
-# spec:
-#   storageClassName: jenkins-sc
-#   accessModes:
-#     - ReadWriteOnce
-#   resources:
-#     requests:
-#       storage: 20Gi
