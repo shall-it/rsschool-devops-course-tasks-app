@@ -412,7 +412,7 @@ controller:
   # Plugins will be installed during Jenkins controller start
   # -- List of Jenkins plugins to install. If you don't want to install plugins, set it to `false`
   installPlugins:
-    - kubernetes:4295.v7fa_01b_309c95
+    # - kubernetes:4295.v7fa_01b_309c95
     - workflow-aggregator:600.vb_57cdd26fdd7
     - git:5.5.2
     - configuration-as-code:1873.vea_5814ca_9c93
@@ -1007,11 +1007,11 @@ agent:
       securityContext:
         privileged: true
         supplementalGroups: [999] 
-  volumes:
-    - name: docker-socket
-      hostPath:
-        path: /var/run/docker.sock
-        type: Socket
+  # volumes:
+  #   - name: docker-socket
+  #     hostPath:
+  #       path: /var/run/docker.sock
+  #       type: Socket
 
   # Useful for not including a serviceAccount in the template if `false`
   # -- Use `serviceAccountAgent.name` as the default value for defaults template `serviceAccount`
@@ -1065,11 +1065,11 @@ agent:
   websocket: false
   directConnection: false
   # -- Agent privileged container
-  privileged: false
+  privileged: true
   # -- Configure container user
-  runAsUser:
+  runAsUser: 0
   # -- Configure container group
-  runAsGroup:
+  runAsGroup: 0
   # -- Enables the agent to use the host network
   hostNetworking: false
   # -- Resources allocation (Requests and Limits)
