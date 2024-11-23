@@ -585,6 +585,9 @@ controller:
                   scriptPath('Jenkinsfile')
                 }
               }
+              triggers {
+                scm('H/5 * * * *')
+              }
             }
 
     # Allows adding to the top-level security JCasC section. For legacy purposes, by default, the chart includes apiToken configurations
