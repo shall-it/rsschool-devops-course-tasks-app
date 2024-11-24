@@ -54,15 +54,23 @@ controller:
   #      command:
   #      - "uname"
   #      - "-a"
+  env:
+    - name: DOCKER_HOST
+      value: unix:///var/run/docker.sock
+  volumes:
+    - name: docker-socket
+      hostPath:
+        path: /var/run/docker.sock
+        type: Socket
 
   # -- Disable use of remember me
   disableRememberMe: false
 
   # -- Set Number of executors
-  numExecutors: 1
+  numExecutors: 0
 
   # -- Sets the executor mode of the Jenkins node. Possible values are "NORMAL" or "EXCLUSIVE"
-  executorMode: "EXCLUSIVE"
+  executorMode: "NORMAL"
 
   # -- Append Jenkins labels to the controller
   customJenkinsLabels: []
@@ -114,11 +122,11 @@ controller:
   # -- Resource allocation (Requests and Limits)
   resources:
     requests:
-      cpu: "250m"
-      memory: "1024Mi"
-    limits:
       cpu: "500m"
-      memory: "2048Mi"
+      memory: "1000Mi"
+    limits:
+      cpu: "750m"
+      memory: "1500Mi"
 
   # Share process namespace to allow sidecar containers to interact with processes in other containers in the same pod
   shareProcessNamespace: false
@@ -138,7 +146,7 @@ controller:
       memory: "384Mi"
     limits:
       cpu: "2000m"
-      memory: "4096Mi"
+      memory: "2048Mi"
   # -- Environment variable sources for Init Container
   initContainerEnvFrom: []
 
@@ -342,8 +350,8 @@ controller:
   - 0.0.0.0/0
   # -- Disabled agent protocols
   disabledAgentProtocols:
-    - JNLP-connect
-    - JNLP2-connect
+    # - JNLP-connect
+    # - JNLP2-connect
   csrf:
     defaultCrumbIssuer:
       # -- Enable the default CSRF Crumb issuer
@@ -404,12 +412,15 @@ controller:
   # Plugins will be installed during Jenkins controller start
   # -- List of Jenkins plugins to install. If you don't want to install plugins, set it to `false`
   installPlugins:
-    - kubernetes:4295.v7fa_01b_309c95
     - workflow-aggregator:600.vb_57cdd26fdd7
     - git:5.5.2
     - configuration-as-code:1873.vea_5814ca_9c93
     - people-view:1.2
     - job-dsl:1.77
+    - docker-plugin:1.7.0
+    - docker-workflow:580.vc0c340686b_54
+    - kubernetes:4296.v20a_7e4d77cf6
+    - email-ext:1855.vd9e491cb_de1e
 
   # If set to false, Jenkins will download the minimum required version of all dependencies.
   # -- Download the minimum required version or latest version of all dependencies
@@ -557,6 +568,25 @@ controller:
                   """.stripIndent())
                   sandbox()
                 }
+              }
+            }
+        - script: >
+            pipelineJob('WordCloudGen') {
+              definition {
+                cpsScm {
+                  scm {
+                    git {
+                      remote {
+                        url('https://github.com/shall-it/rsschool-devops-course-tasks-helm-jenkins.git')
+                      }
+                      branch('task_6')
+                    }
+                  }
+                  scriptPath('Jenkinsfile')
+                }
+              }
+              triggers {
+                scm('H/5 * * * *')
               }
             }
 
@@ -964,6 +994,27 @@ agent:
   enabled: true
   # -- The name of the pod template to use for providing default values
   defaultsProviderTemplate: ""
+  podTemplate:
+  containers:
+    - name: jnlp
+      image: jenkinsci/jnlp-slave:latest
+    - name: docker
+      image: docker:20.10.8-dind
+      tty: true
+      volumeMounts:
+        - name: docker-socket
+          mountPath: /var/run/docker.sock
+      env:
+        - name: DIND
+          value: "true"
+      securityContext:
+        privileged: true
+        supplementalGroups: [999] 
+  # volumes:
+  #   - name: docker-socket
+  #     hostPath:
+  #       path: /var/run/docker.sock
+  #       type: Socket
 
   # Useful for not including a serviceAccount in the template if `false`
   # -- Use `serviceAccountAgent.name` as the default value for defaults template `serviceAccount`
@@ -975,13 +1026,13 @@ agent:
 
   # For connecting to the Jenkins controller
   # -- Overrides the Kubernetes Jenkins URL
-  jenkinsUrl: 
+  jenkinsUrl: http://jenkins.jenkins.svc.cluster.local:8080/
 
   # connects to the specified host and port, instead of connecting directly to the Jenkins controller
   # -- Overrides the Kubernetes Jenkins tunnel
-  jenkinsTunnel:
+  jenkinsTunnel: jenkins-agent.jenkins.svc.cluster.local:50000
   # -- Disables the verification of the controller certificate on remote connection. This flag correspond to the "Disable https certificate check" flag in kubernetes plugin UI
-  skipTlsVerify: false
+  skipTlsVerify: true
   # -- Enable the possibility to restrict the usage of this agent to specific folder. This flag correspond to the "Restrict pipeline support to authorized folders" flag in kubernetes plugin UI
   usageRestricted: false
   # -- The connection timeout in seconds for connections to Kubernetes API. The minimum value is 5
@@ -1017,22 +1068,22 @@ agent:
   websocket: false
   directConnection: false
   # -- Agent privileged container
-  privileged: false
+  privileged: true
   # -- Configure container user
-  runAsUser:
+  runAsUser: 0
   # -- Configure container group
-  runAsGroup:
+  runAsGroup: 0
   # -- Enables the agent to use the host network
   hostNetworking: false
   # -- Resources allocation (Requests and Limits)
   resources:
     requests:
-      cpu: "50m"
-      memory: "128Mi"
+      cpu: "1024m"
+      memory: "1024Mi"
       # ephemeralStorage:
     limits:
-      cpu: "512m"
-      memory: "512Mi"
+      cpu: "1024m"
+      memory: "1024Mi"
       # ephemeralStorage:
   livenessProbe: {}
 #    execArgs: "cat /tmp/healthy"
@@ -1064,7 +1115,7 @@ agent:
   # Configure the attributes as they appear in the corresponding Java class for that type
   # https://github.com/jenkinsci/kubernetes-plugin/tree/master/src/main/java/org/csanchez/jenkins/plugins/kubernetes/volumes
   # -- Additional volumes
-  volumes: []
+  # volumes: []
   # - type: ConfigMap
   #   configMapName: myconfigmap
   #   mountPath: /var/myapp/myconfigmap
